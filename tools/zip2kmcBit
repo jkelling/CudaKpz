@@ -1,0 +1,34 @@
+#!/bin/bash
+
+#converts zipped simple bitfile into CudaKmc readable bit files
+
+ENCODING="__KMC_BIT64C"
+
+MCSpF=$( grep MCSpF $1 | sed s/[^0123456789]//g )
+echo MCSpF $MCSpF
+shift
+while [ "$#" -ge 1 ]; do
+	echo file $1
+	SIZE=$( echo $1 | sed s/^[^0123456789]*// | sed 's/_.*$//' )
+	X=$( echo -n $SIZE | head -c 1 )
+	SIZE=$( echo -n $SIZE | tail -c 2 )
+	Y=$( echo -n $SIZE | head -c 1 )
+	Z=$( echo -n $SIZE | tail -c 1 )
+	echo ..size $X $Y $Z
+	PREFIX=$( echo $1 | sed s/[0123456789].*$// )
+	echo ..prefix $PREFIX
+	IDX=$( echo $1 | sed 's/\.zip.*$//' | sed s/^.*_// | sed s/0*// )
+	IDX=$( printf '%.8d' $(( $IDX * $MCSpF )) )
+	echo ..idx $IDX
+	unzip $1
+	NAME=${PREFIX}${IDX}.bit
+	echo writing to $NAME
+	echo $X > $NAME
+	echo $Y >> $NAME
+	echo $Z >> $NAME
+	echo $ENCODING >> $NAME
+	echo -n -e '\0' >> $NAME
+	cat "1.dat" >> $NAME
+	rm "1.dat"
+	shift
+done

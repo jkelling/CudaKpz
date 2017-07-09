@@ -1,0 +1,62 @@
+#!/bin/bash
+ID="$( date +%s )-$RANDOM"
+N=999
+BINARY=""
+ARGS=""
+STOPOPT="false"
+
+addBinArg()
+{
+	if [ -z "$COMMAND" ]; then
+		COMMAND=$1
+		if [ ! -f "$( which $COMMAND )" ]; then
+			echo "Program $COMMAND -- No such File." >&2
+			exit 1
+		fi
+	else
+		ARGS="$ARGS $1"
+	fi
+}
+
+while [ "$#" -ge 1 ]; do
+	case $1 in
+		-n)
+			shift
+			if [ "$STOPOPT" = "true" ]; then
+				addBinArg $1
+			else
+				N=$1
+			fi
+			;;
+		-i)
+			shift
+			if [ "$STOPOPT" = "true" ]; then
+				addBinArg $1
+			else
+				ID=$1
+			fi
+			;;
+		*)
+			addBinArg $1
+			;;
+	esac
+	shift
+done
+
+if [ -z "$COMMAND" ]; then
+	echo "Usage: repeat [-n {N}] [-i {ID}] {COMMAND} [{ARGS} ...]"
+	exit 0
+fi
+
+if [ -z "$N" ]; then
+	N=1000
+fi
+
+f()
+{
+	time $COMMAND $ARGS
+}
+for i in $( seq -w 1 $N ) ; do
+	echo $i;
+	f >& ${ID}_${i}
+done

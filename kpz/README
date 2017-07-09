@@ -1,0 +1,16 @@
+Be sure to have ../inc made before making anything herein.
+
+Programs:
+kpzScaling 
+	for basic (T)ASEP runs with optional auto correlation
+kpzScalingCpu
+	CPU version
+kpzAutoResponse
+	for auto-response runs
+kpzAutoResponseCpu
+	CPU version
+cum
+	compute higher order moments of scaling
+
+CUDA codes are build for Tesla arch by default. Set the evironment variable
+FERMI=on for Fermi and Kepler architechtures.

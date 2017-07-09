@@ -1,0 +1,11 @@
+#!/bin/bash
+
+while [ "$#" -ge 1 ]; do
+	h5repack -i "$1" -o "${1}.tmp" -f GZIP=1
+	mv "${1}.tmp" "$1"
+	if [ "$?" -ne 0 ]; then
+		echo "Failed: " $1
+	fi
+	shift
+done
+

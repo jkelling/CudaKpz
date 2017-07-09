@@ -1,0 +1,60 @@
+#!/bin/bash
+
+CUDAKMCBIN="CpuKmc"
+RASMOLSCRIPT="$HOME/set.rms"
+CUDAKMCARGS="--xyzLowCutoff 0 --xyzHighCutoff 11"
+STRUCTUREREPEATERBIN="structureRepeater"
+
+FILE=""
+FORCE_BIN_CONVERT=0
+while [ $# -ge 1 ]; do
+	case $1 in
+		"-f" )
+			FORCE_BIN_CONVERT=1
+			;;
+		*)
+			FILE=$1
+			;;
+	esac
+	shift
+done
+
+NAME=$(basename $FILE)
+DIR=$(dirname $FILE)
+EXT=$(echo $NAME | sed 's/^.*\.//')
+NAME=$(echo $NAME | sed 's/\.[^.]*$//')
+
+case "$EXT" in
+	xyz)
+		;;
+	bit)
+		if [ \( ! -f "$DIR/$NAME.xyz" \) -o "$FORCE_BIN_CONVERT" -eq 1  ]; then
+			if [ -f "$DIR/$NAME.xyz" ]; then
+				rm "$DIR/$NAME.xyz"
+			fi
+			if [ -f "$DIR/$NAME.$EXT" ]; then
+				$CUDAKMCBIN --cpu convert $CUDAKMCARGS "$DIR/$NAME.$EXT"
+				if [ "$?" -ne 0 ]; then
+					echo "Failed to convert file."
+					exit 1;
+				fi
+			fi
+		fi
+		;;
+	"in")
+		$STRUCTUREREPEATERBIN "$DIR/$NAME.in" "$DIR/$NAME.xyz"
+		;;
+	*)
+		echo "Unknown filetype $EXT"
+		exit 1
+		;;
+esac
+EXT="xyz"
+
+FILE="$DIR/$NAME.$EXT"
+if [ ! -f "$FILE" ]; then
+	echo "File not found."
+	exit 1;
+fi
+
+rasmol -xyz "$FILE" -script "$RASMOLSCRIPT" &

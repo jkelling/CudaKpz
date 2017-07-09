@@ -1,0 +1,83 @@
+#!/bin/bash
+
+FULLUPDATE=true
+
+getrev()
+{
+	if [ -d .svn ]; then
+		SVNINFO="svn info"
+		if [ -z `which svn` ]; then
+			FULLUPDATE=false
+		fi
+	else
+		SVNINFO="git svn info"
+		if [ -z `which git` ]; then
+			FULLUPDATE=false
+		fi
+	fi
+	
+	
+	if ( $SVNINFO > /dev/null ); then // svn on git-svn checkout
+		$SVNINFO | grep Revision | sed 's/Revision: //'
+	elif ( git st > /dev/null ); then
+		REV=$( git show | head -n1 | sed 's/commit //' )
+		if ( git st | grep modified > /dev/null ); then
+			echo "$REV+"
+		else
+			echo $REV
+		fi
+	else
+		echo "Not a git or svn repo."
+		exit 1
+	fi
+}
+
+update()
+{
+	if [ ! -f "$COUNTERFILE" ]; then
+		if ( $FULLUPDATE ); then
+			echo "No SVN (or Git), can't initialize counter here."
+		else
+			REVISION=$( getrev )
+			BUILD=0
+		fi
+	else
+		. $COUNTERFILE
+		if ( $FULLUPDATE ); then
+			NEWREV=$( getrev )
+			[ -z $REVISION ] && REVISION=0
+			if [ "$REVISION" != "$NEWREV" ]; then
+				REVISION=$NEWREV
+				BUILD=0
+			else
+				BUILD=$(( $BUILD + 1 ))
+			fi
+		else
+			BUILD=$(( $BUILD + 1 ))
+		fi
+	fi
+
+	echo "REVISION=$REVISION" > $COUNTERFILE
+	echo "BUILD=$BUILD" >> $COUNTERFILE
+
+	exit 0
+}
+
+get()
+{
+	if [ ! -f "$COUNTERFILE" ]; then
+		echo "No $COUNTEFRILE is this directory."
+		exit 1
+	fi
+
+	. $COUNTERFILE
+
+	echo "\\\"-${REVISION}.${BUILD}-${HOSTNAME}\\\""
+	
+}
+
+[ ! $# -eq 2 ] && exit 1
+
+COUNTERFILE=$2
+$1
+
